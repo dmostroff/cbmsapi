@@ -41,6 +41,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('hello/', views.hello),
     path('help/', views.help),
+    path('login/', login.LoginView.as_view(), name="login"),
     path('api/jsonrpc/', include(api.urls), name='jsonrpc'),
     path( 'client/', clients.ClientPersonView.as_view(), name='clientlist'),
     path( 'company/', cccompany.CcCompanyView.as_view(), name='companylist'),
