@@ -12,9 +12,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 
-# @api.dispatcher.add_method
-# def login(request, *args, **kwargs):
 
+# restframework version of login
 class LoginView(APIView):
     permission_classes = (AllowAny,)
     def post(self, request, format=None):
@@ -44,30 +43,21 @@ class LoginView(APIView):
         return JsonResponse(data=retval, status=status.HTTP_200_OK)
 
 ## json rpc version
-def login(request):
+@api.dispatcher.add_method
+def login(request, *args, **kwargs):
     retval = {'rc': 0, 'msg': 'OK', 'data': None}
     tokenSerializer = jwt_serializers.TokenObtainPairSerializer()
     try:
-        tokenPair = tokenSerializer.validate(request.data)
-        # tokenPair = tokenSerializer.validate(kwargs)
+        tokenPair = tokenSerializer.validate(kwargs)
     except ValidationError:
-        retval['rc'] = -1
-        retval['msg'] = 'Invalid user/password'
-        retval['data'] = request.data
-        response = JsonResponse(data=retval, status=401)
-        return response
-        # # response = JSONRPCResponseManager.handle(request, retval);
-        # return JsonResponse(retval) # , mimetype="application/json", status=401)
-        # return JSONRPCResponseManager.JsonResponse({retval}, status=401)
+        retval = {'rc': -1, 'msg': 'Invalid user/password', 'data': request.data}
+        return retval
 
     except:
         print("Oops!",sys.exc_info()[0],"occured.")
-        retval['rc'] = -1
-        retval['msg'] = sys.exc_info()[0]
-        retval['data'] = sys.exc_info()[1]
-        response = JsonResponse(data=retval, status=401)
-        return response
-        # return retval
+        retval = {'rc': -1, 'msg': repr(sys.exc_info()[0]), 'data': repr(sys.exc_info()[1])}
+        return retval
+
     user = tokenSerializer.user
     serializer = UserSerializer
     data = serializer(user, many=False).data
@@ -75,6 +65,4 @@ def login(request):
         del data['password']
     data['token'] = tokenPair
     retval['data'] = data
-    response = JsonResponse(data=retval, status=401)
-    return response
-    # return retval
+    return retval
