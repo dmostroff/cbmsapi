@@ -5,6 +5,8 @@ from rest_framework import status
 
 from cbmsapi.models import CcCompany
 from cbmsapi.serializers import CcCompanySerializer
+from rest_framework import mixins
+from rest_framework import generics
 
 class CcCompanyView(APIView):
     """
@@ -24,3 +26,19 @@ class CcCompanyView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CcCompanyDetail(mixins.RetrieveModelMixin,
+                    mixins.UpdateModelMixin,
+                    mixins.DestroyModelMixin,
+                    generics.GenericAPIView):
+    queryset = CcCompany.objects.all()
+    serializer_class = CcCompanySerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)

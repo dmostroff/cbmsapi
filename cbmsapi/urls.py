@@ -21,7 +21,9 @@ from rest_framework_simplejwt import views as jwt_views
 from jsonrpc.backend.django import api
 
 from cbmsapi import views
+from cbmsapi.serializers import CcCardViewSet, CcCompanyViewSet
 from cbmsapi.apis import clients, login, cccompany
+from cbmsapi.apis import cccard
 
 # Serializers define the API representation.
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -36,14 +38,16 @@ class UserViewSet(viewsets.ModelViewSet):
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
 router.register(r'users', UserViewSet)
+router.register(r'cccard', CcCardViewSet)
+router.register(r'cccompany', CcCompanyViewSet)
 
 urlpatterns = [
+    path('api', include(router.urls)),
     path('admin/', admin.site.urls),
     path('hello/', views.hello),
     path('help/', views.help),
     path('login/', login.LoginView.as_view(), name="login"),
     path('api/jsonrpc/', include(api.urls), name='jsonrpc'),
     path( 'client/', clients.ClientPersonView.as_view(), name='clientlist'),
-    path( 'company/', cccompany.CcCompanyView.as_view(), name='companylist'),
     path( 'token/pair/', jwt_views.token_obtain_pair, name='token_obtain_pair'),
 ]
