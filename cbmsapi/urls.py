@@ -21,7 +21,7 @@ from rest_framework_simplejwt import views as jwt_views
 from jsonrpc.backend.django import api
 
 from cbmsapi import views
-from cbmsapi.serializers import CcCardViewSet, CcCompanyViewSet
+from cbmsapi.serializers import CcCardViewSet, CcCompanyViewSet, ClientCcaccountViewSet, ClientSettingViewSet, ClientBankAccountViewSet
 from cbmsapi.apis import clients, login, cccompany
 from cbmsapi.apis import cccard
 
@@ -37,9 +37,10 @@ class UserViewSet(viewsets.ModelViewSet):
 
 # Routers provide an easy way of automatically determining the URL conf.
 router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
+router.register('users', UserViewSet)
 router.register(r'cccard', CcCardViewSet)
 router.register(r'cccompany', CcCompanyViewSet)
+router.register(r'client_ccaccount', ClientCcaccountViewSet)
 
 urlpatterns = [
     path('api', include(router.urls)),
@@ -48,6 +49,12 @@ urlpatterns = [
     path('help/', views.help),
     path('login/', login.LoginView.as_view(), name="login"),
     path('api/jsonrpc/', include(api.urls), name='jsonrpc'),
-    path( 'client/', clients.ClientPersonView.as_view(), name='clientlist'),
+    re_path( 'client/(?P<client_id>[0-9]+)?/?$', clients.ClientPersonView.as_view(), name='clientlist'),
+    path( 'client/bankaccount/', clients.ClientBankAccountView.as_view()),
+    path( 'client/ccaccount/', clients.ClientCCAccountView.as_view()),
+    path( 'client/setting/', clients.ClientSettingView.as_view()),
+    path( 'client/setting/<client_id>/', clients.ClientSettingView.as_view()),
+    # cc cards
+    path( 'cccard/', cccard.CcCardList.as_view(), name="cccardlist"),
     path( 'token/pair/', jwt_views.token_obtain_pair, name='token_obtain_pair'),
 ]
