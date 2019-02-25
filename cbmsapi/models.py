@@ -1,40 +1,6 @@
 from django.db import models
 
 
-class ClientPersonManager(models.Manager):
-    def get_by_natural_key(self, first_name, last_name):
-        return self.get(first_name=first_name, last_name=last_name)
-
-class ClientPerson(models.Model):
-    objects = ClientPersonManager()
-
-    client_id = models.AutoField(primary_key=True)
-    last_name = models.TextField()
-    first_name = models.TextField()
-    middle_name = models.TextField(blank=True, null=True)
-    dob = models.DateField(blank=True, null=True)
-    gender = models.CharField(max_length=1, blank=True, null=True)
-    ssn = models.CharField(max_length=9, blank=True, null=True)
-    mmn = models.TextField(blank=True, null=True)
-    email = models.TextField(blank=True, null=True)
-    pwd = models.TextField(blank=True, null=True)
-    phone = models.CharField(max_length=20, blank=True, null=True)
-    phone_2 = models.CharField(max_length=20, blank=True, null=True)
-    phone_cell = models.CharField(max_length=20, blank=True, null=True)
-    phone_fax = models.CharField(max_length=20, blank=True, null=True)
-    phone_official = models.CharField(max_length=20, blank=True, null=True)
-    client_info = models.TextField(blank=True, null=True)  # This field type is a guess.
-    recorded_on = models.DateTimeField()
-
-    def natural_key(self):
-        return (self.first_name, self.last_name)
-
-
-    class Meta:
-        managed = False
-        db_table = 'client_person'
-        unique_together = (('client_id', 'client_id'), ('last_name', 'first_name', 'middle_name'),)
-
 
 class CcCompany(models.Model):
     cc_company_id = models.AutoField(primary_key=True)
@@ -72,6 +38,55 @@ class CcCard(models.Model):
         managed = False
         db_table = 'cc_card'
 
+class ClientPersonManager(models.Manager):
+    def get_by_natural_key(self, first_name, last_name):
+        return self.get(first_name=first_name, last_name=last_name)
+
+class ClientPerson(models.Model):
+    objects = ClientPersonManager()
+
+    client_id = models.AutoField(primary_key=True)
+    last_name = models.TextField()
+    first_name = models.TextField()
+    middle_name = models.TextField(blank=True, null=True)
+    dob = models.DateField(blank=True, null=True)
+    gender = models.CharField(max_length=1, blank=True, null=True)
+    ssn = models.CharField(max_length=9, blank=True, null=True)
+    mmn = models.TextField(blank=True, null=True)
+    email = models.TextField(blank=True, null=True)
+    pwd = models.TextField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    phone_2 = models.CharField(max_length=20, blank=True, null=True)
+    phone_cell = models.CharField(max_length=20, blank=True, null=True)
+    phone_fax = models.CharField(max_length=20, blank=True, null=True)
+    phone_official = models.CharField(max_length=20, blank=True, null=True)
+    client_info = models.TextField(blank=True, null=True)  # This field type is a guess.
+    recorded_on = models.DateTimeField()
+
+    def natural_key(self):
+        return (self.first_name, self.last_name)
+
+
+    class Meta:
+        managed = False
+        db_table = 'client_person'
+        unique_together = (('client_id', 'client_id'), ('last_name', 'first_name', 'middle_name'),)
+
+
+class ClientBankAccount(models.Model):
+    bank_account_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey('ClientPerson', on_delete=models.CASCADE, blank=True, null=True)
+    bank_name = models.TextField(blank=True, null=True)
+    account_num = models.TextField(blank=True, null=True)
+    account_login = models.TextField(blank=True, null=True)
+    account_password = models.TextField(blank=True, null=True)
+    routing_number = models.TextField(blank=True, null=True)
+    account_status = models.CharField(max_length=32, blank=True, null=True)
+    recorded_on = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'client_bank_account'
 
 class ClientCcAccount(models.Model):
     ccaccount_id = models.AutoField(primary_key=True)
@@ -100,17 +115,48 @@ class ClientCcAccount(models.Model):
         unique_together = (('account', 'name'),)
 
 
-class ClientSetting(models.Model):
-    client_setting_id = models.AutoField(primary_key=True)
-    client = models.ForeignKey('ClientPerson', on_delete=models.CASCADE, blank=True, null=True)
-    prefix = models.CharField(max_length=32, blank=True, null=True)
-    keyname = models.TextField(blank=True, null=True)
-    keyvalue = models.TextField(blank=True, null=True)
+class CcAction(models.Model):
+    ccaction_id = models.AutoField(primary_key=True)
+    ccaccount = models.ForeignKey('ClientCcAccount', models.DO_NOTHING, blank=True, null=True)
+    ccaction = models.TextField(blank=True, null=True)
+    action_type = models.CharField(max_length=32, blank=True, null=True)
+    action_status = models.CharField(max_length=32, blank=True, null=True)
+    due_date = models.DateField(blank=True, null=True)
+    details = models.TextField(blank=True, null=True)
+    recorded_on = models.DateTimeField()
 
     class Meta:
         managed = False
-        db_table = 'client_setting'
-        unique_together = (('client', 'prefix', 'keyname'),)
+        db_table = 'cc_action'
+
+class ClientCreditline(models.Model):
+    creditline_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey('ClientPerson', on_delete=models.CASCADE, blank=True, null=True)
+    credit_line_date = models.DateField()
+    credit_amt = models.DecimalField(max_digits=15, decimal_places=5, blank=True, null=True)
+    credit_status = models.TextField(blank=True, null=True)
+    recorded_on = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'client_creditline'
+        unique_together = (('client', 'credit_line_date'),)
+
+
+class ClientCharges(models.Model):
+    charge_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey('ClientPerson', models.DO_NOTHING)
+    charge_goal = models.DecimalField(max_digits=15, decimal_places=2)
+    charged = models.DecimalField(max_digits=15, decimal_places=2)
+    paid = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    fees = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    due_on_day = models.IntegerField(blank=True, null=True)
+    charge_info = models.TextField(blank=True, null=True)
+    recorded_on = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'client_charges'
 
 class CcBaltransferinfo( models.Model):
     bal_id = models.AutoField(primary_key=True)
@@ -125,31 +171,64 @@ class CcBaltransferinfo( models.Model):
         db_table = 'cc_baltransferinfo'
         # unique_together = (('client', 'prefix', 'keyname'),)
 
-class ClientBankAccount(models.Model):
-    bank_account_id = models.AutoField(primary_key=True)
+
+
+class CcPoints(models.Model):
+    cc_points_id = models.AutoField(primary_key=True)
     client = models.ForeignKey('ClientPerson', on_delete=models.CASCADE, blank=True, null=True)
-    bank_name = models.TextField(blank=True, null=True)
-    account_num = models.TextField(blank=True, null=True)
-    account_login = models.TextField(blank=True, null=True)
-    account_password = models.TextField(blank=True, null=True)
-    routing_number = models.TextField(blank=True, null=True)
-    account_status = models.CharField(max_length=32, blank=True, null=True)
+    sold_to = models.TextField()
+    sold_on = models.DateTimeField()
+    login = models.TextField(blank=True, null=True)
+    pwd = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    source_info = models.TextField(blank=True, null=True)  # This field type is a guess.
     recorded_on = models.DateTimeField()
 
     class Meta:
         managed = False
-        db_table = 'client_bank_account'
+        db_table = 'cc_points'
+        unique_together = (('client', 'sold_to', 'sold_on'),)
 
-class CcAction(models.Model):
-    ccaction_id = models.AutoField(primary_key=True)
+class CcTransaction(models.Model):
+    cctrans_id = models.AutoField(primary_key=True)
     ccaccount = models.ForeignKey('ClientCcAccount', models.DO_NOTHING, blank=True, null=True)
-    ccaction = models.TextField(blank=True, null=True)
-    action_type = models.CharField(max_length=32, blank=True, null=True)
-    action_status = models.CharField(max_length=32, blank=True, null=True)
-    due_date = models.DateField(blank=True, null=True)
-    details = models.TextField(blank=True, null=True)
+    transaction_date = models.DateTimeField()
+    transaction_type = models.CharField(max_length=32)
+    transaction_status = models.CharField(max_length=32, blank=True, null=True)
+    credit = models.DecimalField(max_digits=152, decimal_places=0, blank=True, null=True)
+    debit = models.DecimalField(max_digits=152, decimal_places=0, blank=True, null=True)
     recorded_on = models.DateTimeField()
 
     class Meta:
         managed = False
-        db_table = 'cc_action'
+        db_table = 'cc_transaction'
+        unique_together = (('transaction_date', 'transaction_type'),)
+
+
+class ClientSelfLender(models.Model):
+    self_lender_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey(ClientPerson, models.DO_NOTHING)
+    start_date = models.DateField(blank=True, null=True)
+    duration = models.IntegerField(blank=True, null=True)
+    pay_from = models.TextField(blank=True, null=True)
+    due_on_day = models.IntegerField(blank=True, null=True)
+    pwd = models.TextField(blank=True, null=True)
+    recorded_on = models.DateTimeField()
+
+    class Meta:
+        managed = False
+        db_table = 'client_self_lender'
+        unique_together = (('client', 'start_date', 'pay_from'),)
+
+class ClientSetting(models.Model):
+    client_setting_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey('ClientPerson', on_delete=models.CASCADE, blank=True, null=True)
+    prefix = models.CharField(max_length=32, blank=True, null=True)
+    keyname = models.TextField(blank=True, null=True)
+    keyvalue = models.TextField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'client_setting'
+        unique_together = (('client', 'prefix', 'keyname'),)
+

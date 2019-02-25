@@ -21,3 +21,6 @@ def hello(request):
 
 def help(request):
 	return HttpResponse('<html><body>Help</body></html>')
+
+def pingtest(request, mystring='not given'):
+	return HttpResponse('<html><body><p>Ping Test</p><hr color="blue"/><p>{0}</p></body></html>'.format(mystring))
