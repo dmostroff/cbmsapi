@@ -3,11 +3,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework import status
+import datetime
 
 from cbmsapi.models import ClientSetting
 from cbmsapi.serializers import ClientSettingSerializer, ClientSettingSparseSerializer
 
-class ClientSettingxView(APIView):
+class ClientSettingView(APIView):
     """
     List all snippets, or create a new snippet.
     """
@@ -21,6 +22,17 @@ class ClientSettingxView(APIView):
 
     def post(self, request, format=None):
         serializer = ClientSettingSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, format=None):
+        client_id = request.data["client_id"]
+        prefix = request.data["prefix"]
+        keyname = request.data["keyname"]
+        data = ClientSetting.objects.get(client_id=client_id, prefix=prefix, keyname=keyname)
+        serializer = ClientSettingSerializer(data, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -79,3 +91,14 @@ class ClientSettingView(APIView):
         # if serializer.is_valid():
         #     serializer.save()
         #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def put(self, request, format=None):
+        client_id = request.data["client_id"]
+        prefix = request.data["prefix"]
+        keyname = request.data["keyname"]
+        data = ClientSetting.objects.get(client_id=client_id, prefix=prefix, keyname=keyname)
+        serializer = ClientSettingSerializer(data, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -6,11 +6,11 @@ from cbmsapi.models import CcCompany
 from cbmsapi.models import CcCard
 from cbmsapi.models import ClientBankAccount
 from cbmsapi.models import ClientCcAccount
-from cbmsapi.models import ClientCreditline
+from cbmsapi.models import ClientCreditlineHistory
 from cbmsapi.models import ClientCharges
-from cbmsapi.models import CcBaltransferinfo
-from cbmsapi.models import CcTransaction
-from cbmsapi.models import CcPoints
+from cbmsapi.models import ClientCcBalanceTransfer
+from cbmsapi.models import ClientCcTransaction
+from cbmsapi.models import ClientCcPoints
 from cbmsapi.models import ClientSelfLender
 from cbmsapi.models import ClientSetting
 #--------------------------------
@@ -52,6 +52,7 @@ class ClientSummarySerializer(serializers.ModelSerializer):
     bank_accounts = serializers.SerializerMethodField('_get_client_bankaccounts')
     cc_accounts = serializers.SerializerMethodField('_get_client_ccaccounts')
     creditline = serializers.SerializerMethodField('_get_client_creditline')
+    charges = serializers.SerializerMethodField('_get_client_charges')
     cc_points = serializers.SerializerMethodField('_get_cc_points')
     self_lender = serializers.SerializerMethodField('_get_self_lender')
     # baltransfer = serializers.SerializerMethodField('_get_client_baltransfer')
@@ -81,42 +82,58 @@ class ClientSummarySerializer(serializers.ModelSerializer):
         Get client's credit card accounts
         """
         try:
-            clientCcAccount = ClientCcAccount.objects.filter(client_id=obj.client_id).order_by('-ccaccount_id')[:1].get()
-            retval = clientCcAccount.cc_card.card_name
-        except:
+            clientCcAccount = ClientCcAccount.objects.filter(client_id=obj.client_id)
+            ser = ClientCcAccountCardNameSerializer(clientCcAccount, many=True)
+            cardsum = []
+            for card in ser.data:
+                cardsum.append(card['card_name'])
+            retval = '~'.join(cardsum)
+            # retval = ser.data
+        except Exception as e:
+            print(str(e))
             retval = ''
         return retval
 
     def _get_client_creditline(self, obj):
         try:
-            query = ClientCreditline.objects.filter(client_id=obj.client_id).values('credit_amt')[:1]
+            query = ClientCreditlineHistory.objects.filter(client_id=obj.client_id).values('credit_amt')[:1]
             retval = query[0]['credit_amt']
         except Exception as e:
             print(str(e))
             retval = 0
         return retval
 
+    def _get_client_charges(self, obj):
+        try:
+            retval = ClientCharges.objects.filter(client_id=obj.client_id).count()
+            # ser = CcPointsSerializer(ccPoints, many=True)
+            # retval = ser.data
+        except:
+            retval = ''
+        return retval
+
     def _get_cc_points(self, obj):
         try:
-            ccPoints = CcPoints.objects.filter(client_id=obj.client_id)
-            ser = CcPointsSerializer(ccPoints, many=True)
-            retval = ser.data
+            retval = ClientCcPoints.objects.filter(client_id=obj.client_id).count()
+            # ser = CcPointsSerializer(ccPoints, many=True)
+            # retval = ser.data
         except:
             retval = ''
         return retval
 
     def _get_self_lender(self, obj):
         try:
-            ccPoints = ClientSelfLender.objects.filter(client_id=obj.client_id)
-            ser = ClientSelfLenderSerializer(ccPoints, many=True)
-            retval = ser.data
+            retval = ClientSelfLender.objects.filter(client_id=obj.client_id).count()
+            # ser = ClientSelfLenderSerializer(ccPoints, many=True).A
+            # retval = ser.data
         except:
             retval = ''
         return retval
 
     class Meta:
         model = ClientPerson
-        fields = ('client_id', 'client_name', 'bank_accounts', 'cc_accounts', 'creditline', 'cc_points')
+        fields = ('client_id', 'client_name', 'bank_accounts', 'cc_accounts', 'creditline', 'charges'
+            , 'cc_points', 'self_lender')
 
 class ClientSummaryViewSet(viewsets.ModelViewSet):
     queryset = ClientPerson.objects.all()
@@ -159,11 +176,11 @@ class ClientPersonFullSerializer(serializers.ModelSerializer):
 
     def _get_client_creditline(self, obj):
         """
-        Get client's credit card accounts
+        Get client's credit line
         """
         try:
-            clientCreditline = ClientCreditline.objects.filter(client_id=obj.client_id)
-            ser = ClientCreditlineSerializer(clientCreditline, many=True)
+            clientCreditlineHistory = ClientCreditlineHistory.objects.filter(client_id=obj.client_id)
+            ser = ClientCreditlineSerializer(clientCreditlineHistory, many=True)
             retval = ser.data
         except:
             retval = ''
@@ -183,8 +200,8 @@ class ClientPersonFullSerializer(serializers.ModelSerializer):
 
     def _get_client_baltransfer(self, obj):
         try:
-            baltrans = CcBaltransferinfo.objects.filter(client_id=obj.client_id)
-            ser = CcBaltransferinfoSerializer(baltrans, many=True)
+            baltrans = ClientCcBalanceTransfer.objects.filter(client_id=obj.client_id)
+            ser = ClientCcBalanceTransferSerializer(baltrans, many=True)
             retval = ser.data
         except Exception as e:
             print(str(e))
@@ -193,7 +210,7 @@ class ClientPersonFullSerializer(serializers.ModelSerializer):
 
     def _get_cc_points(self, obj):
         try:
-            ccPoints = CcPoints.objects.filter(client_id=obj.client_id)
+            ccPoints = ClientCcPoints.objects.filter(client_id=obj.client_id)
             ser = CcPointsSerializer(ccPoints, many=True)
             retval = ser.data
         except:
@@ -275,7 +292,7 @@ class CcCardViewSet(viewsets.ModelViewSet):
 class ClientBankAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientBankAccount
-        fields = ('bank_account_id', 'client_id', 'bank_name', 'account_num', 'account_login', 'account_password', 'routing_number', 'account_status', 'recorded_on')
+        fields = ('bank_account_id', 'client', 'bank_name', 'account_num', 'routing_num', 'account_login', 'account_pwd', 'account_status', 'debit_card', 'debit_info', 'recorded_on')
 
 # ViewSets define the view behavior.
 class ClientBankAccountViewSet(viewsets.ModelViewSet):
@@ -284,28 +301,103 @@ class ClientBankAccountViewSet(viewsets.ModelViewSet):
 #--------------------------------
 # ClientCcAccount
 #--------------------------------
-class ClientCcAccountSerializer(serializers.HyperlinkedModelSerializer):
+class ClientCcAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientCcAccount
-        fields = ('ccaccount_id', 'client_id', 'cc_card_id', 'cc_card_type', 'name', 'account', 'account_info', 'bank_name', 'bank_account_num', 'cc_login', 'cc_password', 'cc_status', 'annual_fee', 'credit_limit', 'self_lender', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
+        fields = ('cc_account_id', 'client', 'cc_card', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
+    
+    # def create(self, validated_data):
+    #     data = validated_data.pop('person')
+    #     ccaccount, created = models.ClientCcAccount.objects.update_or_create(
+    #         pk=ccaccount.get('id'),
+    #         defaults=ccaccount
+    #     )
+    #     validated_data['person'] = person
+    #     person_extension = models.PersonExtension.objects.create(
+    #         **validated_data
+    #     )
+    #     return person_extension
 
-# ViewSets define the view behavior.
+    # def update(self, instance, validated_data):
+    #     person_data = validated_data.get('person')
+    #     instance.person.name = person_data.get(
+    #         'name',
+    #         instance.person.name
+    #     )
+    #     instance.person.save()
+    #     instance.extra_data = validated_data.get(
+    #         'extra_data',
+    #         instance.extra_data
+    #     )
+    #     instance.save()
+    #     return instance
+
 class ClientCcAccountViewSet(viewsets.ModelViewSet):
     queryset = ClientCcAccount.objects.all()
     serializer_class = ClientCcAccountSerializer
 
+class ClientCcAccountFullSerializer(serializers.ModelSerializer):
+    client = ClientPersonSerializer(read_only=False)
+    cc_card = CcCardSerializer(read_only=False)
+
+    class Meta:
+        model = ClientCcAccount
+        fields = ('cc_account_id', 'client', 'cc_card', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
+
+
+# ViewSets define the view behavior.
+class ClientCcAccountCardNameSerializer(serializers.ModelSerializer):
+    # cc_card = serializers.StringRelatedField(many=True)
+    # cc_card = CcCardSerializer(read_only=False)
+    client_name = serializers.SerializerMethodField("_get_client_name")
+    card_name = serializers.SerializerMethodField('_get_cc_card_name')
+    # account_num = serializers.SerializerMethodField('_get_account_num')
+    # card_name = serializers.CharField(source='cc_card.card_name')
+    # company_name = serializers.CharField(source='cc_card.cc_company.company_name')
+    # card_full_name = serializers.CharField(source='cc_card.card_name + cc_card.cc_card_id')
+
+    def _get_client_name(self, obj):
+        try:
+            retval = ("{0}, {1} {2}".format(obj.client.last_name
+                , obj.client.first_name
+                , '' if obj.client.middle_name is None else obj.client.middle_name)).strip()
+        except Exception as e:
+            retval = str(e)
+        return retval
+
+    def _get_cc_card_name(self, obj):
+        try:
+            retval = "{}:{}".format(obj.cc_card.cc_company.company_name, obj.cc_card.card_name)
+        except Exception as e:
+            retval = str(e)
+        return retval
+
+    # def _get_account_num(self, obj):
+    #     try:
+            
+    #         retval = 
+
+    class Meta:
+        model = ClientCcAccount
+        fields = ('cc_account_id', 'card_name', 'client_id', 'client_name', 'account', 'credit_limit')
+
+        # fields = ('cc_account_id', 'client', 'cc_card', 'card_name', 'company_name', 'cc_card_type', 'name', 'account', 'account_info', 'bank_name', 'bank_account_num', 'cc_login', 'cc_password', 'cc_status', 'annual_fee', 'credit_limit', 'self_lender', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
+class ClientCcAccountCardNameViewSet(viewsets.ModelViewSet):
+    queryset = ClientCcAccount.objects.all() # .only('clieclient', 'cc_card', 'client')
+    serializer_class = ClientCcAccountCardNameSerializer
+
 #--------------------------------
 # ClientCreditline
 #--------------------------------
-class ClientCreditlineSerializer(serializers.HyperlinkedModelSerializer):
+class ClientCreditlineHistorySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = ClientCreditline
-        fields = ('creditline_id', 'client_id', 'credit_line_date', 'credit_amt', 'credit_status', 'recorded_on')
+        model = ClientCreditlineHistory
+        fields = ('creditline_id', 'client', 'cc_account_id', 'credit_line_date', 'credit_amt', 'credit_status', 'recorded_on')
 
 # ViewSets define the view behavior.
-class ClientCreditlineViewSet(viewsets.ModelViewSet):
-    queryset = ClientCreditline.objects.all()
-    serializer_class = ClientCreditlineSerializer
+class ClientCreditlineHistoryViewSet(viewsets.ModelViewSet):
+    queryset = ClientCreditlineHistory.objects.all()
+    serializer_class = ClientCreditlineHistorySerializer
 
 #--------------------------------
 # ClientCharges
@@ -313,7 +405,7 @@ class ClientCreditlineViewSet(viewsets.ModelViewSet):
 class ClientChargesSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ClientCharges
-        fields = ('charge_id', 'client_id', 'charge_goal', 'charged', 'paid', 'fees', 'due_on_day', 'charge_info', 'recorded_on')
+        fields = ('charge_id', 'client', 'charge_goal', 'charged', 'paid', 'fees', 'due_on_day', 'charge_info', 'recorded_on')
 
 # ViewSets define the view behavior.
 class ClientChargesViewSet(viewsets.ModelViewSet):
@@ -323,28 +415,28 @@ class ClientChargesViewSet(viewsets.ModelViewSet):
 #--------------------------------
 # BalanceTransfer
 #--------------------------------
-class CcBaltransferinfoSerializer(serializers.HyperlinkedModelSerializer):
+class ClientCcBalanceTransferSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = CcBaltransferinfo
-        fields = ('bal_id', 'client_id', 'ccaccount_id', 'due_date', 'total', 'credit_line', 'recorded_on')
+        model = ClientCcBalanceTransfer
+        fields = ('bal_id', 'client', 'cc_account', 'due_date', 'total', 'credit_line', 'recorded_on')
 
 # ViewSets define the view behavior.
-class CcBaltransferinfoViewSet(viewsets.ModelViewSet):
-    queryset = CcBaltransferinfo.objects.all()
-    serializer_class = CcBaltransferinfoSerializer
+class ClientCcBalanceTransferViewSet(viewsets.ModelViewSet):
+    queryset = ClientCcBalanceTransfer.objects.all()
+    serializer_class = ClientCcBalanceTransferSerializer
 
 #--------------------------------
-# CcPoints
+# ClientCcPoints
 #--------------------------------
-class CcPointsSerializer(serializers.HyperlinkedModelSerializer):
+class ClientCcPointsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = CcPoints
-        fields = ('cc_points_id', 'client_id', 'sold_to', 'sold_on', 'login', 'pwd', 'price', 'source_info', 'recorded_on')
+        model = ClientCcPoints
+        fields = ('cc_points_id', 'client', 'cc_account_id', 'sold_to', 'sold_on', 'login', 'pwd', 'price', 'source_info', 'recorded_on')
 
 # ViewSets define the view behavior.
-class CcPointsViewSet(viewsets.ModelViewSet):
-    queryset = CcPoints.objects.all()
-    serializer_class = CcPointsSerializer
+class ClientCcPointsViewSet(viewsets.ModelViewSet):
+    queryset = ClientCcPoints.objects.all()
+    serializer_class = ClientCcPointsSerializer
 
 #--------------------------------
 # ClientSelfLender
@@ -379,21 +471,21 @@ class ClientSettingSparseSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('client_setting_id', 'client_id', 'prefix', 'keyname', 'keyvalue')
 
 # ViewSets define the view behavior.
-class ClientSettingViewSet(viewsets.ModelViewSet):
+class ClientSettingSparseViewSet(viewsets.ModelViewSet):
     queryset = ClientSetting.objects.all()
-    serializer_class = ClientSettingSerializer    
+    serializer_class = ClientSettingSparseSerializer
     
 
 #--------------------------------
 # CcTransaction
 #--------------------------------
-class CcTransactionSerializer(serializers.HyperlinkedModelSerializer):
+class ClientCcTransactionSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = CcTransaction
-        fields = ('cctrans_id', 'ccaccount_id', 'transaction_date', 'transaction_type', 'transaction_status', 'credit', 'debit', 'recorded_on')
+        model = ClientCcTransaction
+        fields = ('cc_trans_id', 'client', 'cc_account_id', 'transaction_date', 'transaction_type', 'transaction_status', 'credit', 'debit', 'recorded_on')
 
 # ViewSets define the view behavior.
-class CcTransactionViewSet(viewsets.ModelViewSet):
-    queryset = CcTransaction.objects.all()
-    serializer_class = CcTransactionSerializer
+class ClientCcTransactionViewSet(viewsets.ModelViewSet):
+    queryset = ClientCcTransaction.objects.all()
+    serializer_class = ClientCcTransactionSerializer
 

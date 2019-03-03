@@ -27,11 +27,12 @@ from cbmsapi.serializers import CcCompanyViewSet
 from cbmsapi.serializers import ClientSummaryViewSet
 from cbmsapi.serializers import ClientBankAccountViewSet
 from cbmsapi.serializers import ClientCcAccountViewSet
-from cbmsapi.serializers import ClientCreditlineViewSet
+from cbmsapi.serializers import ClientCcAccountCardNameViewSet
+from cbmsapi.serializers import ClientCreditlineHistoryViewSet
 from cbmsapi.serializers import ClientChargesViewSet
-from cbmsapi.serializers import CcTransactionViewSet
-from cbmsapi.serializers import CcBaltransferinfoViewSet
-from cbmsapi.serializers import CcPointsViewSet
+from cbmsapi.serializers import ClientCcTransactionViewSet
+from cbmsapi.serializers import ClientCcBalanceTransferViewSet
+from cbmsapi.serializers import ClientCcPointsViewSet
 from cbmsapi.serializers import ClientSelfLenderViewSet
 from cbmsapi.serializers import ClientSettingViewSet
 
@@ -41,10 +42,10 @@ from cbmsapi.apis import cccard
 from cbmsapi.apis import clients
 from cbmsapi.apis import clientbankaccount
 from cbmsapi.apis import clientccaccount
-from cbmsapi.apis import clientcreditline
+from cbmsapi.apis import clientcreditlinehistory
 from cbmsapi.apis import clientcharges
-from cbmsapi.apis import ccbaltransferinfo
-from cbmsapi.apis import ccpoints
+from cbmsapi.apis import clientccbalancetransfer
+from cbmsapi.apis import clientccpoints
 from cbmsapi.apis import clientselflender
 from cbmsapi.apis import clientsetting
 
@@ -64,9 +65,10 @@ router.register('users', UserViewSet)
 router.register('cccard', CcCardViewSet)
 router.register('cccompany', CcCompanyViewSet)
 router.register('client_ccaccount', ClientCcAccountViewSet)
+router.register('ccaccount/name', ClientCcAccountCardNameViewSet)
 router.register('clientsummary', ClientSummaryViewSet)
-router.register('cctransaction', CcTransactionViewSet)
-router.register('ccpoints', CcPointsViewSet)
+router.register('cctransaction', ClientCcTransactionViewSet)
+router.register('ccpoints', ClientCcPointsViewSet)
 router.register('clientsettings', ClientSettingViewSet)
 
 urlpatterns = [
@@ -77,12 +79,18 @@ urlpatterns = [
     re_path('pingtest/(?P<mystring>.+)?/?$', views.pingtest),
     path('login/', login.LoginView.as_view(), name="login"),
     path('api/jsonrpc/', include(api.urls), name='jsonrpc'),
+
+    # client
     re_path( 'client/(?P<client_id>[0-9]+)?/?$', clients.ClientPersonView.as_view(), name='clientlist'),
-    path( 'client/bankaccount/', clientbankaccount.ClientBankAccountView.as_view()),
-    path( 'client/ccaccount/', clientccaccount.ClientCcAccountView.as_view()),
-    re_path( 'client/creditline/(?P<client_id>[1-9][0-9]*)?/?$', clientcreditline.ClientCreditlineView.as_view()),
+    re_path( 'client/bankaccount/(?P<bank_account_id>[1-9][0-9]*)?/?$', clientbankaccount.ClientBankAccountView.as_view()),
+    re_path( 'client/ccaccount/(?P<cc_account_id>[1-9][0-9]*)?/?$', clientccaccount.ClientCcAccountView.as_view()),
+    re_path( 'client/cc/account/(?P<client_id>[0-9]+)?/?(?P<cc_account_id>[0-9]+)?/?$', clientccaccount.ClientCcAccountFullView.as_view()),
+    re_path( 'client/creditline/(?P<creditline_id>[1-9][0-9]*)?/?$', clientcreditlinehistory.ClientCreditlineHistoryView.as_view()),
+    re_path( 'client/cc/balance/(?P<bal_id>[1-9][0-9]*)?/?$', clientccbalancetransfer.ClientCcBalanceTransferView.as_view()),
     re_path( 'client/setting/(?P<client_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
     # cc cards
-    path( 'cccard/', cccard.CcCardList.as_view(), name="cccardlist"),
+    re_path( 'company/(?P<cc_company_id>[1-9][0-9]*)?/?$', cccompany.CcCompanyView.as_view(), name="cccompany"),
+    re_path( 'cccard/(?P<cc_card_id>[1-9][0-9]*)?/?$', cccard.CcCardView.as_view(), name="cccardlist"),
+    # token
     path( 'token/pair/', jwt_views.token_obtain_pair, name='token_obtain_pair'),
 ]

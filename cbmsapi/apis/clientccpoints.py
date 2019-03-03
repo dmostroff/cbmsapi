@@ -3,19 +3,20 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import Http404
 from rest_framework import status
+import datetime
 
-from cbmsapi.models import CcPoints
-from cbmsapi.serializers import CcPointsSerializer
+from cbmsapi.models import ClientCcPoints
+from cbmsapi.serializers import ClientCcPointsSerializer
 
-class CcPointsView(APIView):
+class ClientCcPointsView(APIView):
     """
     List all snippets, or create a new snippet.
     """
     
-    queryset = CcPoints.objects.all()
+    queryset = ClientCcPoints.objects.all()
 
     def get(self, request, format=None):
-        data = CcPoints.objects.all()
+        data = ClientCcPoints.objects.all()
         serializer = CcPointsSerializer(data, many=True)
         return Response(serializer.data)
 
