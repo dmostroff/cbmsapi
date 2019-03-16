@@ -21,33 +21,46 @@ from rest_framework_simplejwt import views as jwt_views
 from jsonrpc.backend.django import api
 
 from cbmsapi import views
+from cbmsapi.serializers import AdmSettingViewSet
 from cbmsapi.serializers import CcCardViewSet
 from cbmsapi.serializers import CcCompanyViewSet
-
-from cbmsapi.serializers import ClientSummaryViewSet
+from cbmsapi.serializers import CcTransactionViewSet
+from cbmsapi.serializers import ClientAddressViewSet
 from cbmsapi.serializers import ClientBankAccountViewSet
 from cbmsapi.serializers import ClientCcAccountViewSet
-from cbmsapi.serializers import ClientCcAccountCardNameViewSet
-from cbmsapi.serializers import ClientCreditlineHistoryViewSet
-from cbmsapi.serializers import ClientChargesViewSet
-from cbmsapi.serializers import ClientCcTransactionViewSet
+from cbmsapi.serializers import ClientCcActionViewSet
 from cbmsapi.serializers import ClientCcBalanceTransferViewSet
+from cbmsapi.serializers import ClientCcHistoryViewSet
 from cbmsapi.serializers import ClientCcPointsViewSet
+from cbmsapi.serializers import ClientCcTransactionViewSet
+from cbmsapi.serializers import ClientChargesViewSet
+from cbmsapi.serializers import ClientCreditlineHistoryViewSet
+from cbmsapi.serializers import ClientPersonViewSet
 from cbmsapi.serializers import ClientSelfLenderViewSet
 from cbmsapi.serializers import ClientSettingViewSet
 
+from cbmsapi.serializers import ClientCcAccountCardNameViewSet
+from cbmsapi.serializers import ClientSummaryViewSet
+
 from cbmsapi.apis import login
-from cbmsapi.apis import cccompany
-from cbmsapi.apis import cccard
-from cbmsapi.apis import clients
-from cbmsapi.apis import clientbankaccount
-from cbmsapi.apis import clientccaccount
-from cbmsapi.apis import clientcreditlinehistory
-from cbmsapi.apis import clientcharges
-from cbmsapi.apis import clientccbalancetransfer
-from cbmsapi.apis import clientccpoints
-from cbmsapi.apis import clientselflender
-from cbmsapi.apis import clientsetting
+
+from cbmsapi.apis.adm import admsetting
+from cbmsapi.apis.cc import cccard
+from cbmsapi.apis.cc import cccompany
+from cbmsapi.apis.cc import cctransaction
+from cbmsapi.apis.client import clientaddress
+from cbmsapi.apis.client import clientbankaccount
+from cbmsapi.apis.client import clientccaccount
+from cbmsapi.apis.client import clientccaction
+from cbmsapi.apis.client import clientccbalancetransfer
+from cbmsapi.apis.client import clientcchistory
+from cbmsapi.apis.client import clientccpoints
+from cbmsapi.apis.client import clientcctransaction
+from cbmsapi.apis.client import clientcharges
+from cbmsapi.apis.client import clientcreditlinehistory
+from cbmsapi.apis.client import clientperson
+from cbmsapi.apis.client import clientselflender
+from cbmsapi.apis.client import clientsetting
 
 # Serializers define the API representation.
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -80,17 +93,26 @@ urlpatterns = [
     path('login/', login.LoginView.as_view(), name="login"),
     path('api/jsonrpc/', include(api.urls), name='jsonrpc'),
 
-    # client
-    re_path( 'client/(?P<client_id>[0-9]+)?/?$', clients.ClientPersonView.as_view(), name='clientlist'),
-    re_path( 'client/bankaccount/(?P<bank_account_id>[1-9][0-9]*)?/?$', clientbankaccount.ClientBankAccountView.as_view()),
-    re_path( 'client/ccaccount/(?P<cc_account_id>[1-9][0-9]*)?/?$', clientccaccount.ClientCcAccountView.as_view()),
-    re_path( 'client/cc/account/(?P<client_id>[0-9]+)?/?(?P<cc_account_id>[0-9]+)?/?$', clientccaccount.ClientCcAccountFullView.as_view()),
-    re_path( 'client/creditline/(?P<creditline_id>[1-9][0-9]*)?/?$', clientcreditlinehistory.ClientCreditlineHistoryView.as_view()),
-    re_path( 'client/cc/balance/(?P<bal_id>[1-9][0-9]*)?/?$', clientccbalancetransfer.ClientCcBalanceTransferView.as_view()),
-    re_path( 'client/setting/(?P<client_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
-    # cc cards
-    re_path( 'company/(?P<cc_company_id>[1-9][0-9]*)?/?$', cccompany.CcCompanyView.as_view(), name="cccompany"),
-    re_path( 'cccard/(?P<cc_card_id>[1-9][0-9]*)?/?$', cccard.CcCardView.as_view(), name="cccardlist"),
+    re_path( 'adm/setting/(?P<adm_setting_id>[1-9][0-9]*)?/?$', admsetting.AdmSettingView.as_view()),
+    # Cc
+    re_path( 'cc/card/(?P<cc_card_id>[1-9][0-9]*)?/?$', cccard.CcCardView.as_view()),
+    re_path( 'cc/company/(?P<cc_company_id>[1-9][0-9]*)?/?$', cccompany.CcCompanyView.as_view()),
+    re_path( 'cc/transaction/(?P<cctrans_id>[1-9][0-9]*)?/?$', cctransaction.CcTransactionView.as_view()),
+    # Client
+    re_path( 'client/address/(?P<address_id>[1-9][0-9]*)?/?$', clientaddress.ClientAddressView.as_view()),
+    re_path( 'client/bank/account/(?P<bank_account_id>[1-9][0-9]*)?/?$', clientbankaccount.ClientBankAccountView.as_view()),
+    re_path( 'client/cc/account/(?P<cc_account_id>[1-9][0-9]*)?/?$', clientccaccount.ClientCcAccountView.as_view()),
+    re_path( 'client/cc/action/(?P<cc_action_id>[1-9][0-9]*)?/?$', clientccaction.ClientCcActionView.as_view()),
+    re_path( 'client/cc/balance/transfer/(?P<bal_id>[1-9][0-9]*)?/?$', clientccbalancetransfer.ClientCcBalanceTransferView.as_view()),
+    re_path( 'client/cc/history/(?P<cc_hist_id>[1-9][0-9]*)?/?$', clientcchistory.ClientCcHistoryView.as_view()),
+    re_path( 'client/cc/points/(?P<cc_points_id>[1-9][0-9]*)?/?$', clientccpoints.ClientCcPointsView.as_view()),
+    re_path( 'client/cc/transaction/(?P<cc_trans_id>[1-9][0-9]*)?/?$', clientcctransaction.ClientCcTransactionView.as_view()),
+    re_path( 'client/charges/(?P<charge_id>[1-9][0-9]*)?/?$', clientcharges.ClientChargesView.as_view()),
+    re_path( 'client/creditline/history/(?P<creditline_id>[1-9][0-9]*)?/?$', clientcreditlinehistory.ClientCreditlineHistoryView.as_view()),
+    re_path( 'client/person/(?P<client_id>[1-9][0-9]*)?/?$', clientperson.ClientPersonView.as_view()),
+    re_path( 'client/self/lender/(?P<self_lender_id>[1-9][0-9]*)?/?$', clientselflender.ClientSelfLenderView.as_view()),
+    re_path( 'client/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
+    re_path( 'client/(?P<client_id>[1-9][0-9]*)/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
     # token
     path( 'token/pair/', jwt_views.token_obtain_pair, name='token_obtain_pair'),
 ]
