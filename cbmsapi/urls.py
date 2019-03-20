@@ -61,6 +61,8 @@ from cbmsapi.apis.client import clientcreditlinehistory
 from cbmsapi.apis.client import clientperson
 from cbmsapi.apis.client import clientselflender
 from cbmsapi.apis.client import clientsetting
+from cbmsapi.apis.clientccaccount import ClientCcAccountFullView
+from cbmsapi.apis.clientccaccount import ClientCcAccountSummaryView
 
 # Serializers define the API representation.
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -94,13 +96,19 @@ urlpatterns = [
     path('api/jsonrpc/', include(api.urls), name='jsonrpc'),
 
     re_path( 'adm/setting/(?P<adm_setting_id>[1-9][0-9]*)?/?$', admsetting.AdmSettingView.as_view()),
+    re_path( 'adm/setting/((?P<prefix>[A-Za-z0-9]+)?/?)(?P<keyname>[A-Za-z0-9]+)?/?$', admsetting.AdmSettingPrefixView.as_view()),
+    path( 'adm/prefix/setting/', admsetting.AdmSettingGetPrefixView.as_view()),
+    
     # Cc
     re_path( 'cc/card/(?P<cc_card_id>[1-9][0-9]*)?/?$', cccard.CcCardView.as_view()),
     re_path( 'cc/company/(?P<cc_company_id>[1-9][0-9]*)?/?$', cccompany.CcCompanyView.as_view()),
     re_path( 'cc/transaction/(?P<cctrans_id>[1-9][0-9]*)?/?$', cctransaction.CcTransactionView.as_view()),
     # Client
+    re_path( 'client/(?P<client_id>[1-9][0-9]*)?/?$', clientperson.ClientPersonView.as_view()),
     re_path( 'client/address/(?P<address_id>[1-9][0-9]*)?/?$', clientaddress.ClientAddressView.as_view()),
     re_path( 'client/bank/account/(?P<bank_account_id>[1-9][0-9]*)?/?$', clientbankaccount.ClientBankAccountView.as_view()),
+    re_path( 'client/cc/accounts/(?P<client_id>[1-9][0-9]*)?/?$', ClientCcAccountFullView.as_view()),
+    re_path( 'client/cc/account/summary/(?P<client_id>[1-9][0-9]*)?/?$', ClientCcAccountSummaryView.as_view()),
     re_path( 'client/cc/account/(?P<cc_account_id>[1-9][0-9]*)?/?$', clientccaccount.ClientCcAccountView.as_view()),
     re_path( 'client/cc/action/(?P<cc_action_id>[1-9][0-9]*)?/?$', clientccaction.ClientCcActionView.as_view()),
     re_path( 'client/cc/balance/transfer/(?P<bal_id>[1-9][0-9]*)?/?$', clientccbalancetransfer.ClientCcBalanceTransferView.as_view()),

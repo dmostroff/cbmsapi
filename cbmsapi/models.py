@@ -172,7 +172,7 @@ class ClientCcHistory(models.Model):
 
 
 class ClientCcPoints(models.Model):
-    cc_trans_id = models.AutoField(primary_key=True)
+    cc_points_id = models.AutoField(primary_key=True)
     client = models.ForeignKey('ClientPerson', on_delete=models.CASCADE)
     cc_account_id = models.IntegerField()
     sold_to = models.TextField()

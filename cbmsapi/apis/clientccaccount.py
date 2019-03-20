@@ -7,6 +7,7 @@ import datetime
 from cbmsapi.models import ClientCcAccount
 from cbmsapi.serializers import ClientCcAccountSerializer
 from cbmsapi.serializers import ClientCcAccountFullSerializer
+from cbmsapi.serializers import ClientCcAccountSummarySerializer
 
 class ClientCcAccountView(APIView):
     """
@@ -72,4 +73,21 @@ class ClientCcAccountFullView(APIView):
         else:
             queryset = ClientCcAccount.objects.filter(client_id=client_id, cc_account_id=cc_account_id)
         serializer = ClientCcAccountFullSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+class ClientCcAccountSummaryView(APIView):
+    """
+    Summary listing of Credit Card Client Account
+    """
+
+    queryset = ClientCcAccount.objects.all()
+
+    def get(self, request, client_id=None, cc_account_id=None):
+        if client_id is None:
+            queryset = ClientCcAccount.objects.all()
+        elif cc_account_id is None:
+            queryset = ClientCcAccount.objects.filter(client_id=client_id)
+        else:
+            queryset = ClientCcAccount.objects.filter(client_id=client_id, cc_account_id=cc_account_id)
+        serializer = ClientCcAccountSummarySerializer(queryset, many=True)
         return Response(serializer.data)

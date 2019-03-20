@@ -1,5 +1,6 @@
 from rest_framework import serializers, viewsets
 from django.contrib.auth.models import User
+from datetime import datetime
 
 from cbmsapi.models import AdmSetting
 from cbmsapi.models import CcCard
@@ -167,7 +168,7 @@ class ClientCcHistoryViewSet(viewsets.ModelViewSet):
 #--------------------------------
 # ClientCcPoints
 #--------------------------------
-class ClientCcPointsSerializer(serializers.HyperlinkedModelSerializer):
+class ClientCcPointsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientCcPoints
         fields = ('cc_points_id', 'client_id', 'cc_account_id', 'sold_to', 'sold_on', 'sold_points', 'price', 'login', 'pwd', 'source_info', 'recorded_on')
@@ -206,7 +207,7 @@ class ClientChargesViewSet(viewsets.ModelViewSet):
 #--------------------------------
 # ClientCreditlineHistory
 #--------------------------------
-class ClientCreditlineHistorySerializer(serializers.HyperlinkedModelSerializer):
+class ClientCreditlineHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientCreditlineHistory
         fields = ('creditline_id', 'client_id', 'cc_account_id', 'credit_line_date', 'credit_amt', 'credit_status', 'recorded_on')
@@ -312,9 +313,10 @@ class ClientSummarySerializer(serializers.ModelSerializer):
 
     def _get_client_creditline(self, obj):
         try:
-            query = ClientCreditlineHistory.objects.filter(client_id=obj.client_id).values('credit_amt')[:1]
-            ser = ClientCreditlineHistorySerializer(ClientCreditlineHistory, many=True)
-            retval = ';'.join([credit['credit_line_date']+':'+credit['credit_amt'] for credit in ser.data])
+            query = ClientCreditlineHistory.objects.filter(client_id=obj.client_id)[:1]
+            ser = ClientCreditlineHistorySerializer(query, many=True)
+            # retval = ';'.join(['{:8,.2f} as of {:%d %b %Y}'.format(float(credit['credit_amt']), credit['credit_line_date']) for credit in ser.data])
+            retval = ';'.join(['${:,.2f} as of {:%d %b %Y}'.format(float(credit['credit_amt']), datetime.strptime(credit['credit_line_date'], "%Y-%m-%d")) for credit in ser.data])
         except Exception as e:
             print(str(e))
             retval = str(e)
@@ -479,6 +481,39 @@ class ClientCcAccountFullSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientCcAccount
         fields = ('cc_account_id', 'client', 'cc_card', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
+
+class ClientCcAccountSummarySerializer(serializers.ModelSerializer):
+    cc_card_name = serializers.CharField(source='cc_card.card_name')
+    baltransfer = serializers.SerializerMethodField('_get_baltransfer')
+    cc_points = serializers.SerializerMethodField('_get_cc_points')
+
+    def _get_baltransfer(self, obj):
+        try:
+            baltrans = ClientCcBalanceTransfer.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id).order_by('-due_date')
+            ser = ClientCcBalanceTransferSerializer(baltrans, many=True)
+            retval = ser.data
+        except Exception as e:
+            print(str(e))
+            retval = ''
+        return retval
+
+    def _get_cc_points(self, obj):
+        try:
+            ccPoints = ClientCcPoints.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id).order_by('-sold_on')[:1]
+            ser = ClientCcPointsSerializer(ccPoints, many=True)
+            retval = ser.data
+        except Exception as e:
+            print(str(e))
+            retval = ''
+        return retval
+
+
+    class Meta:
+        model = ClientCcAccount
+        fields = ('cc_account_id', 'client_id', 'cc_card_name', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info'
+            , 'baltransfer'
+            , 'cc_points'
+            , 'recorded_on')
 
 
 # ViewSets define the view behavior.

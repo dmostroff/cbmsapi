@@ -21,7 +21,7 @@ class AdmSettingView(APIView):
 
     def get(self, request, adm_setting_id=None, format=None):
         try:
-            if client_id is None:
+            if adm_setting_id is None:
                 data = AdmSetting.objects.all()
                 serializer = AdmSettingSerializer(data, many=True)
             else:
@@ -63,3 +63,49 @@ class AdmSettingView(APIView):
     #         print( repr(e))
     #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     #     return Response(status=status.HTTP_204_NO_CONTENT
+
+class AdmSettingPrefixView(APIView):
+    """
+    List all AdmSetting with summary information.
+    """
+
+    # permission_classes = (permissions.IsAuthenticated,)
+    # authentication_classes = (authentication.JWTAuthentication,)
+
+    def get(self, request, prefix=None, keyname=None, format=None):
+        try:
+            if prefix is None and keyname is None:
+                data = AdmSetting.objects.all()
+                serializer = AdmSettingSerializer(data, many=True)
+            elif keyname is None:
+                data = AdmSetting.objects.filter(prefix=prefix)
+                serializer = AdmSettingSerializer(data, many=True)
+            else:
+                data = AdmSetting.objects.get(prefix=prefix, keyname=keyname)
+                serializer = AdmSettingSerializer(data, many=False)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except AdmSetting.DoesNotExist as e1:
+            return Response(serializer.data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e2:
+            return Response({'rc': -1, 'msg': str(e2), 'data': {'prefix': prefix, 'keyname': keyname}}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'rc': -1, 'msg': 'Error'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdmSettingGetPrefixView(APIView):
+    """
+    List all AdmSetting with summary information.
+    """
+
+    # permission_classes = (permissions.IsAuthenticated,)
+    # authentication_classes = (authentication.JWTAuthentication,)
+
+    def get(self, request, format=None):
+        try:
+            data = AdmSetting.objects.order_by('prefix').values('prefix').distinct()
+            res = list(data)
+            retval = [v['prefix'] for v in res ]
+            return Response(retval, status=status.HTTP_200_OK)
+        except Exception as e2:
+            return Response({'rc': -1, 'msg': str(e2), 'data': None}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'rc': -1, 'msg': 'Error'}, status=status.HTTP_400_BAD_REQUEST)
+
