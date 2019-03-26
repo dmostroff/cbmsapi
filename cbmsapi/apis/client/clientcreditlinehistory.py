@@ -8,8 +8,8 @@ import datetime
 
 from django.db.utils import IntegrityError, DatabaseError, DataError
 
-from cbmsapi.models import ClientCreditlineHistory
-from cbmsapi.serializers import ClientCreditlineHistorySerializer
+from cbmsapi.models import ClientPerson, ClientCreditlineHistory
+from cbmsapi.serializers import ClientPersonSerializer, ClientCreditlineHistorySerializer, ClientCreditlineHistoryEditSerializer
 
 class ClientCreditlineHistoryView(APIView):
     """
@@ -21,12 +21,12 @@ class ClientCreditlineHistoryView(APIView):
 
     def get(self, request, creditline_id=None, format=None):
         try:
-            if client_id is None:
+            if creditline_id is None:
                 data = ClientCreditlineHistory.objects.all()
                 serializer = ClientCreditlineHistorySerializer(data, many=True)
             else:
                 data = ClientCreditlineHistory.objects.get(pk=creditline_id)
-                serializer = ClientCreditlineHistorySerializer(data, many=False)
+                serializer = ClientCreditlineHistoryEditSerializer(data, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ClientCreditlineHistory.DoesNotExist as e1:
             return Response(serializer.data, status=status.HTTP_404_NOT_FOUND)
@@ -63,3 +63,24 @@ class ClientCreditlineHistoryView(APIView):
     #         print( repr(e))
     #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     #     return Response(status=status.HTTP_204_NO_CONTENT
+
+class ClientCreditlineHistoryByClientView(APIView):
+    """
+    List all snippets, or create a new snippet.
+    """
+    # permission_classes = (permissions.IsAuthenticated,)
+    # authentication_classes = (authentication.JWTAuthentication,)
+
+    # queryset = ClientPerson.objects.all()
+
+    def get(self, request, client_id=None, format=None):
+        if client_id is not None:
+            data = ClientCreditlineHistory.objects.filter(client_id=client_id)
+            serializer = ClientCreditlineHistorySerializer(data, many=True)
+            clientPerson = ClientPerson.objects.get(pk=client_id)
+            cpSerializer = ClientPersonSerializer(clientPerson, many=False)
+            return Response( {'client': cpSerializer.data, 'creditline_history': serializer.data})
+        else:
+            data = ClientCreditlineHistory.objects.all()
+            serializer = ClientCreditlineHistorySerializer(data, many=True)
+        return Response(serializer.data)

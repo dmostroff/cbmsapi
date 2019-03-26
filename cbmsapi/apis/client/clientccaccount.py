@@ -21,7 +21,7 @@ class ClientCcAccountView(APIView):
 
     def get(self, request, cc_account_id=None, format=None):
         try:
-            if client_id is None:
+            if cc_account_id is None:
                 data = ClientCcAccount.objects.all()
                 serializer = ClientCcAccountSerializer(data, many=True)
             else:

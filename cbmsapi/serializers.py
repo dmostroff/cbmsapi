@@ -46,6 +46,11 @@ class AdmSettingViewSet(viewsets.ModelViewSet):
     queryset = AdmSetting.objects.all()
     serializer_class = AdmSettingSerializer
 
+class AdmSettingKVSerializer( serializers.ModelSerializer):
+    class Meta:
+        model = AdmSetting
+        fields = ('keyname', 'keyvalue')
+
 #--------------------------------
 # CcCard
 #--------------------------------
@@ -117,9 +122,19 @@ class ClientBankAccountViewSet(viewsets.ModelViewSet):
 # ClientCcAccount
 #--------------------------------
 class ClientCcAccountSerializer(serializers.HyperlinkedModelSerializer):
+    cc_card_name = serializers.CharField(source='cc_card.card_name')
+    cc_status_desc = serializers.SerializerMethodField('_get_cc_status')
+
+    def _get_cc_status(self, obj):
+        try:
+            retval = AdmSetting.objects.get(prefix='CARDSTATUS', keyname=obj.cc_status).keyvalue
+        except Exception as e:
+            retval = str(e)
+        return retval
+
     class Meta:
         model = ClientCcAccount
-        fields = ('cc_account_id', 'client_id', 'cc_card_id', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
+        fields = ('cc_account_id', 'client_id', 'cc_card_id', 'cc_card_name', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'cc_status_desc', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
 
 # ViewSets define the view behavior.
 class ClientCcAccountViewSet(viewsets.ModelViewSet):
@@ -208,14 +223,47 @@ class ClientChargesViewSet(viewsets.ModelViewSet):
 # ClientCreditlineHistory
 #--------------------------------
 class ClientCreditlineHistorySerializer(serializers.ModelSerializer):
+    credit_status_desc = serializers.SerializerMethodField('_get_status_description')
+
+    def _get_status_description(self, obj):
+        try:
+            retval = AdmSetting.objects.get(prefix='CREDITLINESTATUS', keyname=obj.credit_status).keyvalue
+            # retval = AdmSettingKVSerializer( statuses, many=False).data
+        except Exception as e:
+            retval = str(e)
+        return retval
+
+    # def _get_statuses(self, obj):
+    #     try:
+    #         statuses = AdmSetting.objects.filter(prefix='CREDITLINESTATUS')
+    #         retval = AdmSettingKVSerializer( statuses, many=True).data
+    #     except Exception as e:
+    #         retval = str(e)
+        # return retval
     class Meta:
         model = ClientCreditlineHistory
-        fields = ('creditline_id', 'client_id', 'cc_account_id', 'credit_line_date', 'credit_amt', 'credit_status', 'recorded_on')
+        fields = ('creditline_id', 'client_id', 'cc_account_id', 'credit_line_date', 'credit_amt', 'credit_status', 'credit_status_desc', 'recorded_on')
 
 # ViewSets define the view behavior.
 class ClientCreditlineHistoryViewSet(viewsets.ModelViewSet):
     queryset = ClientCreditlineHistory.objects.all()
     serializer_class = ClientCreditlineHistorySerializer
+
+class ClientCreditlineHistoryEditSerializer(serializers.ModelSerializer):
+    credit_statuses = serializers.SerializerMethodField('_get_statuses')
+
+    def _get_statuses(self, obj):
+        try:
+            statuses = AdmSetting.objects.filter(prefix='CREDITLINESTATUS')
+            retval = AdmSettingKVSerializer( statuses, many=True).data
+        except Exception as e:
+            retval = str(e)
+        return retval
+
+    class Meta:
+        model = ClientCreditlineHistory
+        fields = ('creditline_id', 'client_id', 'cc_account_id', 'credit_line_date', 'credit_amt', 'credit_status', 'credit_statuses', 'recorded_on')
+
 
 #--------------------------------
 # ClientPerson

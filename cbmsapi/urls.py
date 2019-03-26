@@ -63,6 +63,7 @@ from cbmsapi.apis.client import clientselflender
 from cbmsapi.apis.client import clientsetting
 from cbmsapi.apis.clientccaccount import ClientCcAccountFullView
 from cbmsapi.apis.clientccaccount import ClientCcAccountSummaryView
+# from cbmsapi.apis.clientcreditlinehistory import ClientCreditlineHistoryByClientView
 
 # Serializers define the API representation.
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -96,7 +97,7 @@ urlpatterns = [
     path('api/jsonrpc/', include(api.urls), name='jsonrpc'),
 
     re_path( 'adm/setting/(?P<adm_setting_id>[1-9][0-9]*)?/?$', admsetting.AdmSettingView.as_view()),
-    re_path( 'adm/setting/((?P<prefix>[A-Za-z0-9]+)?/?)(?P<keyname>[A-Za-z0-9]+)?/?$', admsetting.AdmSettingPrefixView.as_view()),
+    re_path( 'adm/setting/((?P<prefix>[_A-Za-z0-9]+)?/?)(?P<keyname>[A-Za-z0-9]+)?/?$', admsetting.AdmSettingPrefixView.as_view()),
     path( 'adm/prefix/setting/', admsetting.AdmSettingGetPrefixView.as_view()),
     
     # Cc
@@ -117,6 +118,7 @@ urlpatterns = [
     re_path( 'client/cc/transaction/(?P<cc_trans_id>[1-9][0-9]*)?/?$', clientcctransaction.ClientCcTransactionView.as_view()),
     re_path( 'client/charges/(?P<charge_id>[1-9][0-9]*)?/?$', clientcharges.ClientChargesView.as_view()),
     re_path( 'client/creditline/history/(?P<creditline_id>[1-9][0-9]*)?/?$', clientcreditlinehistory.ClientCreditlineHistoryView.as_view()),
+    re_path( 'client/(?P<client_id>[1-9][0-9]*)/creditline/history/?$', clientcreditlinehistory.ClientCreditlineHistoryByClientView.as_view()),
     re_path( 'client/person/(?P<client_id>[1-9][0-9]*)?/?$', clientperson.ClientPersonView.as_view()),
     re_path( 'client/self/lender/(?P<self_lender_id>[1-9][0-9]*)?/?$', clientselflender.ClientSelfLenderView.as_view()),
     re_path( 'client/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
