@@ -10,6 +10,26 @@ from encrypted_model_fields.fields import EncryptedCharField
 from rest_framework.settings import api_settings
 from django.db import models
 
+class YNBooleanField(models.BooleanField):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['max_length'] = 1
+        super(YNBooleanField, self).__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        if value in ('Y', 'y'):
+            return True
+        elif value in ('N', 'n'):
+            return False
+        else:
+            raise ValueError
+
+    def get_prep_value(self, value):
+        if value:
+            return 'Y'
+        else:
+            return 'N'
+
 class AdmSetting(models.Model):
     adm_setting_id = models.AutoField(primary_key=True)
     prefix = models.CharField(max_length=32)
@@ -117,7 +137,7 @@ class ClientCcAccount(models.Model):
     cc_login = models.TextField(blank=True, null=True)
     cc_pwd = models.TextField(blank=True, null=True)
     cc_status = models.CharField(max_length=32, blank=True, null=True)
-    annual_fee_waived = models.CharField(max_length=1, blank=True, null=True)
+    annual_fee_waived = YNBooleanField()
     credit_limit = models.DecimalField(max_digits=15, decimal_places=5, blank=True, null=True)
     addtional_card = models.BooleanField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)

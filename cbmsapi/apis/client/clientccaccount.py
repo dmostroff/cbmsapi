@@ -9,7 +9,7 @@ import datetime
 from django.db.utils import IntegrityError, DatabaseError, DataError
 
 from cbmsapi.models import ClientCcAccount
-from cbmsapi.serializers import ClientCcAccountSerializer
+from cbmsapi.serializers import ClientCcAccountSerializer, ClientCcAccountEditSerializer
 
 class ClientCcAccountView(APIView):
     """
@@ -35,11 +35,53 @@ class ClientCcAccountView(APIView):
         return Response({'rc': -1, 'msg': 'Error'}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, cc_account_id=None, format=None):
-        request.data["recorded_on"] = datetime.datetime.now().isoformat()
-        serializer = ClientCcAccountSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
+        request.data["recorded_on"] = datetime.datetime.now().utcnow()
+        if 'cc_account_info' not in request.data or request.data['cc_account_info'] is None:
+            request.data['cc_account_info'] = "{}"
+        # if request.data['client']['client_info'] is None:
+        #     request.data['client']['client_info'] = "{}"
+
+        clientCcAccount = ClientCcAccount(
+            cc_account_id = request.data['cc_account_id'],
+            client_id = request.data['client']['client_id'],
+            cc_card_id = request.data['cc_card']['cc_card_id'],
+            name = request.data['name'],
+            account = request.data['account'],
+            account_info = request.data['account_info'],
+            cc_login = request.data['cc_login'],
+            cc_pwd = request.data['cc_pwd'],
+            cc_status = request.data['cc_status'],
+            annual_fee_waived = 'Y' if request.data['annual_fee_waived'] else 'N',
+            credit_limit = request.data['credit_limit'],
+            # addtional_card = request.data['additional_card'],
+            notes = request.data['notes'],
+            # ccaccount_info = request.data['cc_account_info'],
+            recorded_on = request.data['recorded_on']
+            )
+        try:
+            clientCcAccount.save()
+            serializer = ClientCcAccountSerializer(clientCcAccount)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(str(e))
+            return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # if 'client_id' not in request.data:
+        #     request.data['client_id'] = request.data['client']['client_id']
+        # if 'cc_card_id' not in request.data:
+        #     request.data['cc_card_id'] = request.data['cc_card']['cc_card_id']
+        # serializer = ClientCcAccountSerializer(data=request.data)
+        # if serializer.is_valid():
+        #     try:
+        #         if 'client_id' not in serializer.data or serializer.data['client_id'] is None:
+        #             serializer.data['client_id'] = request.data['client']['client_id']
+        #         if 'cc_card_id' not in serializer.data or serializer.data['cc_card_id'] is None:
+        #             serializer.data['cc_card_id'] = request.data['cc_card']['cc_card_id']
+        #         serializer.save()
+        #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+        #     except Exception as e:
+        #         print(str(e))
+        #         return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, cc_account_id=None, format=None):

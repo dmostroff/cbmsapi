@@ -93,6 +93,19 @@ class CcTransactionViewSet(viewsets.ModelViewSet):
     serializer_class = CcTransactionSerializer
 
 #--------------------------------
+# ClientPerson
+#--------------------------------
+class ClientPersonSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = ClientPerson
+        fields = ('client_id', 'last_name', 'first_name', 'middle_name', 'dob', 'gender', 'ssn', 'mmn', 'email', 'pwd', 'phone', 'phone_2', 'phone_cell', 'phone_fax', 'phone_official', 'client_info', 'recorded_on')
+
+# ViewSets define the view behavior.
+class ClientPersonViewSet(viewsets.ModelViewSet):
+    queryset = ClientPerson.objects.all()
+    serializer_class = ClientPersonSerializer
+
+#--------------------------------
 # ClientAddress
 #--------------------------------
 class ClientAddressSerializer(serializers.HyperlinkedModelSerializer):
@@ -122,7 +135,8 @@ class ClientBankAccountViewSet(viewsets.ModelViewSet):
 # ClientCcAccount
 #--------------------------------
 class ClientCcAccountSerializer(serializers.HyperlinkedModelSerializer):
-    cc_card_name = serializers.CharField(source='cc_card.card_name')
+    client = ClientPersonSerializer(read_only=True)
+    cc_card = CcCardSerializer(read_only=True)
     cc_status_desc = serializers.SerializerMethodField('_get_cc_status')
 
     def _get_cc_status(self, obj):
@@ -134,12 +148,17 @@ class ClientCcAccountSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = ClientCcAccount
-        fields = ('cc_account_id', 'client_id', 'cc_card_id', 'cc_card_name', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'cc_status_desc', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
+        fields = ('cc_account_id', 'client', 'cc_card', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'cc_status_desc', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
 
 # ViewSets define the view behavior.
 class ClientCcAccountViewSet(viewsets.ModelViewSet):
     queryset = ClientCcAccount.objects.all()
     serializer_class = ClientCcAccountSerializer
+
+class ClientCcAccountEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientCcAccount
+        fields = ('cc_account_id', 'client_id', 'cc_card_id', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
 
 #--------------------------------
 # ClientCcAction
@@ -264,19 +283,6 @@ class ClientCreditlineHistoryEditSerializer(serializers.ModelSerializer):
         model = ClientCreditlineHistory
         fields = ('creditline_id', 'client_id', 'cc_account_id', 'credit_line_date', 'credit_amt', 'credit_status', 'credit_statuses', 'recorded_on')
 
-
-#--------------------------------
-# ClientPerson
-#--------------------------------
-class ClientPersonSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = ClientPerson
-        fields = ('client_id', 'last_name', 'first_name', 'middle_name', 'dob', 'gender', 'ssn', 'mmn', 'email', 'pwd', 'phone', 'phone_2', 'phone_cell', 'phone_fax', 'phone_official', 'client_info', 'recorded_on')
-
-# ViewSets define the view behavior.
-class ClientPersonViewSet(viewsets.ModelViewSet):
-    queryset = ClientPerson.objects.all()
-    serializer_class = ClientPersonSerializer
 
 #--------------------------------
 # ClientSelfLender
@@ -521,7 +527,6 @@ class ClientPersonSummarySerializer(serializers.ModelSerializer):
             'bankaccounts', 'ccaccounts', 'baltransfer', 'ccpoints', 'settings'
             'recorded_on')
 
-
 class ClientCcAccountFullSerializer(serializers.ModelSerializer):
     client = ClientPersonSerializer(read_only=False)
     cc_card = CcCardSerializer(read_only=False)
@@ -531,9 +536,31 @@ class ClientCcAccountFullSerializer(serializers.ModelSerializer):
         fields = ('cc_account_id', 'client', 'cc_card', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
 
 class ClientCcAccountSummarySerializer(serializers.ModelSerializer):
+    client_name = serializers.SerializerMethodField('_get_client_name')
+    # serializers.CharField(source='client_person.last_name') and serializers.CharField(source='client_person.first_name')
     cc_card_name = serializers.CharField(source='cc_card.card_name')
+    cc_status_desc = serializers.SerializerMethodField('_get_cc_status')
     baltransfer = serializers.SerializerMethodField('_get_baltransfer')
     cc_points = serializers.SerializerMethodField('_get_cc_points')
+
+    def _get_client_name(self, obj):
+        try:
+            retval = ("{0}, {1} {2}".format(obj.client.last_name
+                , obj.client.first_name
+                , '' if obj.client.middle_name is None else obj.client.middle_name)).strip()
+        except Exception as e:
+            retval = str(e)
+        return retval
+
+    def _get_cc_status(self, obj):
+        try:
+            retval = AdmSetting.objects.get(prefix='CARDSTATUS', keyname=obj.cc_status).keyvalue
+        except AdmSetting.DoesNotExist as e1:
+            retval = obj.cc_status
+        except Exception as e:
+            retval = str(e)
+            # retval = str(e)
+        return retval
 
     def _get_baltransfer(self, obj):
         try:
@@ -558,7 +585,12 @@ class ClientCcAccountSummarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ClientCcAccount
-        fields = ('cc_account_id', 'client_id', 'cc_card_name', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info'
+        fields = ('cc_account_id', 'client_id', 'client_name'
+            , 'cc_card_id', 'cc_card_name'
+            , 'name', 'account', 'account_info', 'cc_login', 'cc_pwd'
+            , 'cc_status', 'cc_status_desc'
+            , 'annual_fee_waived'
+            , 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info'
             , 'baltransfer'
             , 'cc_points'
             , 'recorded_on')

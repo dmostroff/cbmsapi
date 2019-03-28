@@ -29,8 +29,11 @@ class ClientCcAccountView(APIView):
         request.data["recorded_on"] = datetime.datetime.now().isoformat()
         serializer = ClientCcAccountSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            try:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response(e, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, cc_account_id=None, format=None):
