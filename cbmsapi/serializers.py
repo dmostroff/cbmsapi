@@ -19,6 +19,7 @@ from cbmsapi.models import ClientCreditlineHistory
 from cbmsapi.models import ClientPerson
 from cbmsapi.models import ClientSelfLender
 from cbmsapi.models import ClientSetting
+from cbmsapi.models import ClientNotes
 
 #--------------------------------
 # User
@@ -308,6 +309,17 @@ class ClientSettingSerializer(serializers.HyperlinkedModelSerializer):
 # ViewSets define the view behavior.
 class ClientSettingViewSet(viewsets.ModelViewSet):
     queryset = ClientSetting.objects.all()
+    serializer_class = ClientSettingSerializer
+
+class ClientNotesSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = ClientNotes
+        fields = ('client_note_id', 'client_id', 'note', 'tags', 'recorded_by', )
+        read_only_fields = ('recorded_on',)
+
+# ViewSets define the view behavior.
+class ClientNotesViewSet(viewsets.ModelViewSet):
+    queryset = ClientNotes.objects.all()
     serializer_class = ClientSettingSerializer
 
 

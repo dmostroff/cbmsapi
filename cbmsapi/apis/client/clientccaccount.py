@@ -35,7 +35,7 @@ class ClientCcAccountView(APIView):
         return Response({'rc': -1, 'msg': 'Error'}, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request, cc_account_id=None, format=None):
-        request.data["recorded_on"] = datetime.datetime.now().utcnow()
+        request.data["recorded_on"] = datetime.datetime.now()
         if 'cc_account_info' not in request.data or request.data['cc_account_info'] is None:
             request.data['cc_account_info'] = "{}"
         # if request.data['client']['client_info'] is None:

@@ -304,3 +304,16 @@ class ClientSetting(models.Model):
     class Meta:
         db_table = 'client_setting'
         unique_together = (('client', 'prefix', 'keyname'),)
+
+
+class ClientNotes(models.Model):
+    client_note_id = models.AutoField(primary_key=True)
+    client = models.ForeignKey('ClientPerson', on_delete=models.CASCADE)
+    note = models.TextField(blank=True, null=True)
+    tags = JSONField(blank=True, null=True)
+    recorded_by = models.CharField(max_length=32)
+    recorded_on = models.DateTimeField()
+
+    class Meta:
+        db_table = 'client_note'
+

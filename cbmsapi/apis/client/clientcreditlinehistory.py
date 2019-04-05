@@ -55,14 +55,18 @@ class ClientCreditlineHistoryView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # def delete(self, request, creditline_id=None, format=None):
-    #     try:
-    #         instance = self.get_object(creditline_id)
-    #         instance.delete()
-    #     except Exception as e:
-    #         print( repr(e))
-    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    #     return Response(status=status.HTTP_204_NO_CONTENT
+    def delete(self, request, creditline_id=None):
+        if creditline_id is None:
+            return Response(status=status.HTTP_204_NO_CONTENT) 
+        try:
+            instance = ClientCreditlineHistory.objects.get(pk=creditline_id)
+            serializer = ClientCreditlineHistorySerializer(instance, many=False)
+            instance.delete()
+            return Response(serializer.data, status=status.HTTP_200_OK) 
+        except Exception as e:
+            print( repr(e))
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ClientCreditlineHistoryByClientView(APIView):
     """
@@ -75,12 +79,12 @@ class ClientCreditlineHistoryByClientView(APIView):
 
     def get(self, request, client_id=None, format=None):
         if client_id is not None:
-            data = ClientCreditlineHistory.objects.filter(client_id=client_id)
+            data = ClientCreditlineHistory.objects.filter(client_id=client_id).order_by('-credit_line_date')
             serializer = ClientCreditlineHistorySerializer(data, many=True)
             clientPerson = ClientPerson.objects.get(pk=client_id)
             cpSerializer = ClientPersonSerializer(clientPerson, many=False)
             return Response( {'client': cpSerializer.data, 'creditline_history': serializer.data})
         else:
-            data = ClientCreditlineHistory.objects.all()
+            data = ClientCreditlineHistory.objects.all().order_by('-credit_line_date')
             serializer = ClientCreditlineHistorySerializer(data, many=True)
         return Response(serializer.data)

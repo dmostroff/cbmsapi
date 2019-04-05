@@ -38,6 +38,7 @@ from cbmsapi.serializers import ClientCreditlineHistoryViewSet
 from cbmsapi.serializers import ClientPersonViewSet
 from cbmsapi.serializers import ClientSelfLenderViewSet
 from cbmsapi.serializers import ClientSettingViewSet
+from cbmsapi.serializers import ClientNotesViewSet
 
 from cbmsapi.serializers import ClientCcAccountCardNameViewSet
 from cbmsapi.serializers import ClientSummaryViewSet
@@ -61,6 +62,7 @@ from cbmsapi.apis.client import clientcreditlinehistory
 from cbmsapi.apis.client import clientperson
 from cbmsapi.apis.client import clientselflender
 from cbmsapi.apis.client import clientsetting
+from cbmsapi.apis.client import clientnotes
 from cbmsapi.apis.clientccaccount import ClientCcAccountFullView
 from cbmsapi.apis.clientccaccount import ClientCcAccountSummaryView
 # from cbmsapi.apis.clientcreditlinehistory import ClientCreditlineHistoryByClientView
@@ -86,6 +88,7 @@ router.register('clientsummary', ClientSummaryViewSet)
 router.register('cctransaction', ClientCcTransactionViewSet)
 router.register('ccpoints', ClientCcPointsViewSet)
 router.register('clientsettings', ClientSettingViewSet)
+router.register('clientnotes', ClientNotesViewSet)
 
 urlpatterns = [
     path('api/', include(router.urls)),
@@ -123,6 +126,8 @@ urlpatterns = [
     re_path( 'client/self/lender/(?P<self_lender_id>[1-9][0-9]*)?/?$', clientselflender.ClientSelfLenderView.as_view()),
     re_path( 'client/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
     re_path( 'client/(?P<client_id>[1-9][0-9]*)/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
+    re_path( 'client/notes/(?P<client_id>[1-9][0-9]*)?/?$', clientnotes.ClientNotesView.as_view()),
+
     # token
     path( 'token/pair/', jwt_views.token_obtain_pair, name='token_obtain_pair'),
 ]
