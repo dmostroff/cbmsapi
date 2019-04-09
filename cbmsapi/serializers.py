@@ -1,4 +1,5 @@
 from rest_framework import serializers, viewsets
+from django.db.models import Avg, Count, Min, Sum
 from django.contrib.auth.models import User
 from datetime import datetime
 
@@ -554,6 +555,7 @@ class ClientCcAccountSummarySerializer(serializers.ModelSerializer):
     cc_status_desc = serializers.SerializerMethodField('_get_cc_status')
     baltransfer = serializers.SerializerMethodField('_get_baltransfer')
     cc_points = serializers.SerializerMethodField('_get_cc_points')
+    credit_line = serializers.SerializerMethodField('_get_credit_line')
 
     def _get_client_name(self, obj):
         try:
@@ -594,6 +596,15 @@ class ClientCcAccountSummarySerializer(serializers.ModelSerializer):
             retval = ''
         return retval
 
+    def _get_credit_line(self, obj):
+        try:
+            # creditLine = ClientCreditlineHistory.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id)
+            creditLineSum = ClientCreditlineHistory.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id).aggregate(Sum('credit_amt'))['credit_amt__sum']
+            retval = creditLineSum
+        except Exception as e:
+            print(str(e))
+            retval = ''
+        return retval
 
     class Meta:
         model = ClientCcAccount
@@ -605,6 +616,7 @@ class ClientCcAccountSummarySerializer(serializers.ModelSerializer):
             , 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info'
             , 'baltransfer'
             , 'cc_points'
+            , 'credit_line'
             , 'recorded_on')
 
 
