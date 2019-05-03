@@ -60,6 +60,7 @@ from cbmsapi.apis.client import clientcctransaction
 from cbmsapi.apis.client import clientcharges
 from cbmsapi.apis.client import clientcreditlinehistory
 from cbmsapi.apis.client import clientperson
+from cbmsapi.apis.client import clientsummary
 from cbmsapi.apis.client import clientselflender
 from cbmsapi.apis.client import clientsetting
 from cbmsapi.apis.client import clientnotes
@@ -127,6 +128,7 @@ urlpatterns = [
     re_path( 'client/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
     re_path( 'client/(?P<client_id>[1-9][0-9]*)/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
     re_path( 'client/notes/(?P<client_id>[1-9][0-9]*)?/?$', clientnotes.ClientNotesView.as_view()),
+    re_path( 'client/summary/(?P<client_id>[1-9][0-9]*)?/?$', clientsummary.ClientSummaryView.as_view()),
 
     # token
     path( 'token/pair/', jwt_views.token_obtain_pair, name='token_obtain_pair'),
