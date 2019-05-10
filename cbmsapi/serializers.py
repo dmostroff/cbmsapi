@@ -426,7 +426,7 @@ class ClientSummaryViewSet(viewsets.ModelViewSet):
 
 
 class ClientPersonFullSerializer(serializers.ModelSerializer):
-    # settings = ClientSetting.objects.filter(client_id = self.model.client_id)
+    addresses = serializers.SerializerMethodField('_get_client_addresses')
     bank_accounts = serializers.SerializerMethodField('_get_client_bankaccounts')
     cc_accounts = serializers.SerializerMethodField('_get_client_ccaccounts')
     charges = serializers.SerializerMethodField('_get_client_charges')
@@ -434,6 +434,16 @@ class ClientPersonFullSerializer(serializers.ModelSerializer):
     creditline = serializers.SerializerMethodField('_get_client_creditline')
     cc_points = serializers.SerializerMethodField('_get_cc_points')
     settings = serializers.SerializerMethodField('_get_client_settings')
+
+
+    def _get_client_addresses(self, obj):
+        try:
+            clientAddress = ClientAddress.objects.filter(client_id=obj.client_id)
+            ser = ClientAddressSerializer(clientAddress,many=True)
+            retval = ser.data
+        except Exception as e:
+            retval = {'error': repr(e)}
+        return retval
 
     def _get_client_bankaccounts(self, obj):
         """
@@ -528,7 +538,9 @@ class ClientPersonFullSerializer(serializers.ModelSerializer):
         fields = ('client_id', 'last_name', 'first_name', 'middle_name',
             'dob', 'gender', 'ssn', 'mmn', 'email', 'pwd',
             'phone', 'phone_2', 'phone_cell', 'phone_fax', 'phone_official', 'client_info',
-            'bank_accounts', 'cc_accounts', 'charges', 'baltransfer', 'creditline', 'cc_points', 'settings',
+            'addresses',
+            'bank_accounts', 'cc_accounts', 'charges', 'baltransfer', 'creditline', 'cc_points',
+            'settings',
             'recorded_on')
 
 class ClientPersonSummarySerializer(serializers.ModelSerializer):

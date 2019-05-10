@@ -61,6 +61,7 @@ from cbmsapi.apis.client import clientcharges
 from cbmsapi.apis.client import clientcreditlinehistory
 from cbmsapi.apis.client import clientperson
 from cbmsapi.apis.client import clientsummary
+from cbmsapi.apis.client import clientpersonfull
 from cbmsapi.apis.client import clientselflender
 from cbmsapi.apis.client import clientsetting
 from cbmsapi.apis.client import clientnotes
@@ -109,9 +110,15 @@ urlpatterns = [
     re_path( 'cc/company/(?P<cc_company_id>[1-9][0-9]*)?/?$', cccompany.CcCompanyView.as_view()),
     re_path( 'cc/transaction/(?P<cctrans_id>[1-9][0-9]*)?/?$', cctransaction.CcTransactionView.as_view()),
     # Client
-    re_path( 'client/(?P<client_id>[1-9][0-9]*)?/?$', clientperson.ClientPersonView.as_view()),
+    re_path( 'client/summary/(?P<client_id>[1-9][0-9]*)?/?$', clientsummary.ClientSummaryView.as_view()),
+    re_path( 'client/(?P<client_id>[1-9][0-9]*)?/?$', clientpersonfull.ClientPersonFullView.as_view()),
+    re_path( 'client/person/(?P<client_id>[1-9][0-9]*)?/?$', clientperson.ClientPersonView.as_view()),
     re_path( 'client/address/(?P<address_id>[1-9][0-9]*)?/?$', clientaddress.ClientAddressView.as_view()),
+
+    # Bank Account
+    re_path( 'client/(?P<client_id>[1-9][0-9]*)?/bank/account/?$', clientbankaccount.ClientBankAccountByClientView.as_view()),
     re_path( 'client/bank/account/(?P<bank_account_id>[1-9][0-9]*)?/?$', clientbankaccount.ClientBankAccountView.as_view()),
+    # CC Account
     re_path( 'client/cc/accounts/(?P<client_id>[1-9][0-9]*)?/?$', ClientCcAccountFullView.as_view()),
     re_path( 'client/cc/account/summary/(?P<client_id>[1-9][0-9]*)?/?$', ClientCcAccountSummaryView.as_view()),
     re_path( 'client/cc/account/(?P<cc_account_id>[1-9][0-9]*)?/?$', clientccaccount.ClientCcAccountView.as_view()),
@@ -120,15 +127,14 @@ urlpatterns = [
     re_path( 'client/cc/history/(?P<cc_hist_id>[1-9][0-9]*)?/?$', clientcchistory.ClientCcHistoryView.as_view()),
     re_path( 'client/cc/points/(?P<cc_points_id>[1-9][0-9]*)?/?$', clientccpoints.ClientCcPointsView.as_view()),
     re_path( 'client/cc/transaction/(?P<cc_trans_id>[1-9][0-9]*)?/?$', clientcctransaction.ClientCcTransactionView.as_view()),
+    #Charges, CreditLine
     re_path( 'client/charges/(?P<charge_id>[1-9][0-9]*)?/?$', clientcharges.ClientChargesView.as_view()),
     re_path( 'client/creditline/history/(?P<creditline_id>[1-9][0-9]*)?/?$', clientcreditlinehistory.ClientCreditlineHistoryView.as_view()),
     re_path( 'client/(?P<client_id>[1-9][0-9]*)/creditline/history/?$', clientcreditlinehistory.ClientCreditlineHistoryByClientView.as_view()),
-    re_path( 'client/person/(?P<client_id>[1-9][0-9]*)?/?$', clientperson.ClientPersonView.as_view()),
     re_path( 'client/self/lender/(?P<self_lender_id>[1-9][0-9]*)?/?$', clientselflender.ClientSelfLenderView.as_view()),
     re_path( 'client/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
     re_path( 'client/(?P<client_id>[1-9][0-9]*)/setting/(?P<client_setting_id>[1-9][0-9]*)?/?$', clientsetting.ClientSettingView.as_view()),
     re_path( 'client/notes/(?P<client_id>[1-9][0-9]*)?/?$', clientnotes.ClientNotesView.as_view()),
-    re_path( 'client/summary/(?P<client_id>[1-9][0-9]*)?/?$', clientsummary.ClientSummaryView.as_view()),
 
     # token
     path( 'token/pair/', jwt_views.token_obtain_pair, name='token_obtain_pair'),

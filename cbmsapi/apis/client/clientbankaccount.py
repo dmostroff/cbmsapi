@@ -8,6 +8,8 @@ import datetime
 
 from django.db.utils import IntegrityError, DatabaseError, DataError
 
+from cbmsapi.models import ClientPerson
+from cbmsapi.serializers import ClientPersonSerializer
 from cbmsapi.models import ClientBankAccount
 from cbmsapi.serializers import ClientBankAccountSerializer
 
@@ -21,7 +23,7 @@ class ClientBankAccountView(APIView):
 
     def get(self, request, bank_account_id=None, format=None):
         try:
-            if client_id is None:
+            if bank_account_id is None:
                 data = ClientBankAccount.objects.all()
                 serializer = ClientBankAccountSerializer(data, many=True)
             else:
@@ -56,6 +58,37 @@ class ClientBankAccountView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # def delete(self, request, bank_account_id=None, format=None):
+    #     try:
+    #         instance = self.get_object(bank_account_id)
+    #         instance.delete()
+    #     except Exception as e:
+    #         print( repr(e))
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     return Response(status=status.HTTP_204_NO_CONTENT
+
+class ClientBankAccountByClientView(APIView):
+    """
+    List all ClientBankAccount with summary information.
+    """
+
+    # permission_classes = (permissions.IsAuthenticated,)
+    # authentication_classes = (authentication.JWTAuthentication,)
+
+    def get(self, request, client_id, format=None):
+        try:
+            data = ClientBankAccount.objects.filter(client_id=client_id)
+            serializer = ClientBankAccountSerializer(data, many=True)
+            clientPerson = ClientPerson.objects.get(pk=client_id)
+            cpSerializer = ClientPersonSerializer(clientPerson, many=False)
+            return Response( {'client': cpSerializer.data, 'bankaccount': serializer.data})
+        except ClientBankAccount.DoesNotExist as e1:
+            return Response(serializer.data, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e2:
+            return Response({'rc': -1, 'msg': str(e2), 'data': client_id} , status=status.HTTP_400_BAD_REQUEST)
+        return Response({'rc': -1, 'msg': 'Error'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    # def delete(self, request, client_id=None, format=None):
     #     try:
     #         instance = self.get_object(bank_account_id)
     #         instance.delete()
