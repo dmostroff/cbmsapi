@@ -9,7 +9,7 @@ import datetime
 from django.db.utils import IntegrityError, DatabaseError, DataError
 
 from cbmsapi.models import ClientCcAccount
-from cbmsapi.serializers import ClientCcAccountSerializer, ClientCcAccountEditSerializer
+from cbmsapi.serializers import ClientCcAccountFullSerializer, ClientCcAccountSerializer, ClientCcAccountEditSerializer
 
 class ClientCcAccountView(APIView):
     """
@@ -23,10 +23,10 @@ class ClientCcAccountView(APIView):
         try:
             if cc_account_id is None:
                 data = ClientCcAccount.objects.all()
-                serializer = ClientCcAccountSerializer(data, many=True)
+                serializer = ClientCcAccountFullSerializer(data, many=True)
             else:
                 data = ClientCcAccount.objects.get(pk=cc_account_id)
-                serializer = ClientCcAccountSerializer(data, many=False)
+                serializer = ClientCcAccountFullSerializer(data, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ClientCcAccount.DoesNotExist as e1:
             return Response(serializer.data, status=status.HTTP_404_NOT_FOUND)

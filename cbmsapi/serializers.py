@@ -427,8 +427,8 @@ class ClientSummaryViewSet(viewsets.ModelViewSet):
 
 class ClientPersonFullSerializer(serializers.ModelSerializer):
     addresses = serializers.SerializerMethodField('_get_client_addresses')
-    bank_accounts = serializers.SerializerMethodField('_get_client_bankaccounts')
-    cc_accounts = serializers.SerializerMethodField('_get_client_ccaccounts')
+    bankAccountList = serializers.SerializerMethodField('_get_client_bankaccounts')
+    ccAccountList = serializers.SerializerMethodField('_get_client_ccaccounts')
     charges = serializers.SerializerMethodField('_get_client_charges')
     baltransfer = serializers.SerializerMethodField('_get_client_baltransfer')
     creditline = serializers.SerializerMethodField('_get_client_creditline')
@@ -539,7 +539,7 @@ class ClientPersonFullSerializer(serializers.ModelSerializer):
             'dob', 'gender', 'ssn', 'mmn', 'email', 'pwd',
             'phone', 'phone_2', 'phone_cell', 'phone_fax', 'phone_official', 'client_info',
             'addresses',
-            'bank_accounts', 'cc_accounts', 'charges', 'baltransfer', 'creditline', 'cc_points',
+            'bankAccountList', 'ccAccountList', 'charges', 'baltransfer', 'creditline', 'cc_points',
             'settings',
             'recorded_on')
 
@@ -555,10 +555,64 @@ class ClientPersonSummarySerializer(serializers.ModelSerializer):
 class ClientCcAccountFullSerializer(serializers.ModelSerializer):
     client = ClientPersonSerializer(read_only=False)
     cc_card = CcCardSerializer(read_only=False)
+    # cc_status_desc = serializers.SerializerMethodField('_get_cc_status')
+    baltransfer = serializers.SerializerMethodField('_get_baltransfer')
+    cc_points = serializers.SerializerMethodField('_get_cc_points')
+    credit_line = serializers.SerializerMethodField('_get_credit_line')
+    cc_actions = serializers.SerializerMethodField('_get_cc_actions')
+
+    def _get_baltransfer(self, obj):
+        try:
+            baltrans = ClientCcBalanceTransfer.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id).order_by('-due_date')
+            ser = ClientCcBalanceTransferSerializer(baltrans, many=True)
+            retval = ser.data
+        except Exception as e:
+            print(str(e))
+            retval = ''
+        return retval
+
+    def _get_cc_actions(self, obj):
+        try:
+            actions = ClientCcAction.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id).order_by('-recorded_on')
+            ser = ClientCcActionSerializer(actions, many=True)
+            retval = ser.data
+        except Exception as e:
+            print(str(e))
+            retval = ''
+        return retval
+
+    def _get_cc_points(self, obj):
+        try:
+            ccPoints = ClientCcPoints.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id).order_by('-sold_on')[:1]
+            ser = ClientCcPointsSerializer(ccPoints, many=True)
+            retval = ser.data
+        except Exception as e:
+            print(str(e))
+            retval = ''
+        return retval
+
+    def _get_credit_line(self, obj):
+        try:
+            # creditLine = ClientCreditlineHistory.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id)
+            creditLineSum = ClientCreditlineHistory.objects.filter(client_id=obj.client_id, cc_account_id=obj.cc_account_id).aggregate(Sum('credit_amt'))['credit_amt__sum']
+            retval = creditLineSum
+        except Exception as e:
+            print(str(e))
+            retval = ''
+        return retval
 
     class Meta:
         model = ClientCcAccount
-        fields = ('cc_account_id', 'client', 'cc_card', 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes', 'ccaccount_info', 'recorded_on')
+        fields = ('cc_account_id'
+            , 'client'
+            , 'cc_card'
+            , 'name', 'account', 'account_info', 'cc_login', 'cc_pwd', 'cc_status', 'annual_fee_waived', 'credit_limit', 'addtional_card', 'notes'
+            , 'ccaccount_info'
+            , 'recorded_on'
+            , 'baltransfer'
+            , 'cc_points'
+            , 'credit_line'
+            , 'cc_actions')
 
 class ClientCcAccountSummarySerializer(serializers.ModelSerializer):
     client_name = serializers.SerializerMethodField('_get_client_name')
